@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: aicodereview_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: aicodereview
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  # backend:
+  #   build: ./backend
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/aicodereview
+  #     - SPRING_DATASOURCE_USERNAME=user
+  #     - SPRING_DATASOURCE_PASSWORD=password
+  #   networks:
+  #     - app-network
+
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "80:80"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge

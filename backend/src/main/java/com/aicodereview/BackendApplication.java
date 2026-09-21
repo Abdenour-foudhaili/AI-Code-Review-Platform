@@ -1,4 +1,4 @@
-package com.aicodereview.backend;
+package com.aicodereview;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

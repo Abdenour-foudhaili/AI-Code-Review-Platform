@@ -1,1 +1,133 @@
-/* You can add global styles to this file, and also import other style files */
+/* Design System for AI Code Review Platform */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+:root {
+  /* Colors - Dark Theme */
+  --bg-main: #0d1117;
+  --bg-panel: #161b22;
+  --bg-panel-hover: #21262d;
+  --bg-panel-border: #30363d;
+  
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  
+  --accent-primary: #58a6ff;
+  --accent-primary-hover: #3182ce;
+  --accent-success: #2ea043;
+  --accent-warning: #d29922;
+  --accent-danger: #f85149;
+  
+  --severity-critical: #f85149;
+  --severity-high: #ff7b72;
+  --severity-medium: #d29922;
+  --severity-low: #8b949e;
+  --severity-info: #58a6ff;
+
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Typography Utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-critical { color: var(--severity-critical); }
+.text-high { color: var(--severity-high); }
+.text-medium { color: var(--severity-medium); }
+.text-low { color: var(--severity-low); }
+
+.font-mono { font-family: 'Fira Code', monospace; }
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+h1 { font-size: 24px; margin-bottom: var(--spacing-md); }
+h2 { font-size: 20px; margin-bottom: var(--spacing-md); }
+h3 { font-size: 16px; margin-bottom: var(--spacing-sm); }
+
+/* Layout Utilities */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+
+.grid { display: grid; }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.h-screen { height: 100vh; }
+
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+
+/* Forms */
+input, select, textarea {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  border: 1px solid var(--bg-panel-border);
+  border-radius: var(--border-radius-md);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 14px;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-panel-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

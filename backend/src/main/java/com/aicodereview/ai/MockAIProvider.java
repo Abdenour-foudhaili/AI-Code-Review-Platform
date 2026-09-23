@@ -13,10 +13,15 @@ public class MockAIProvider implements AIReviewService {
         this.repository = repository;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     @Override
-    public void performReview(CodeReview review) {
+    public void performReview(CodeReview detachedReview) {
         // Simulate AI processing delay
         try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+
+        // Fetch freshly attached entity to avoid LazyInitializationException
+        CodeReview review = repository.findById(detachedReview.getId()).orElse(null);
+        if (review == null) return;
 
         // Mock findings
         ReviewFinding finding1 = ReviewFinding.builder()

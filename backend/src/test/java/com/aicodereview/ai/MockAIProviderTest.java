@@ -26,6 +26,8 @@ public class MockAIProviderTest {
         review.setId(1L);
         review.setFindings(new ArrayList<>());
         
+        when(repository.findById(1L)).thenReturn(java.util.Optional.of(review));
+        
         aiProvider.performReview(review);
 
         assertEquals(ReviewStatus.COMPLETED, review.getStatus());

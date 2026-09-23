@@ -1,199 +1,161 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { ReviewService } from '../../../core/services/review.service';
+import { CreateReviewRequest, ReviewType } from '../../../core/models/review.model';
 
 @Component({
   selector: 'app-code-review',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="code-review-page flex-col gap-lg h-full">
       <header class="page-header">
         <h1>New Code Review</h1>
-        <p class="text-secondary">Analyze your source code with AI</p>
+        <p class="text-secondary">Submit your source code for an AI-powered code review.</p>
       </header>
+      
+      <div *ngIf="error" class="error-banner">{{ error }}</div>
 
-      <div class="workspace flex gap-lg">
-        <div class="editor-section flex-col w-full gap-sm">
-          <div class="toolbar flex items-center justify-between">
-            <div class="flex items-center gap-sm">
-              <select class="select-lang">
-                <option>Java</option>
-                <option>TypeScript</option>
-                <option>Python</option>
-                <option>C#</option>
+      <div class="review-layout flex gap-lg flex-1">
+        
+        <div class="editor-section flex-col gap-sm flex-2">
+          <div class="section-title">Source Code</div>
+          <div class="editor-container">
+            <textarea 
+              [(ngModel)]="request.sourceCode"
+              class="code-editor" 
+              placeholder="// Paste your source code here..." 
+              spellcheck="false"
+              [disabled]="loading">
+            </textarea>
+          </div>
+        </div>
+
+        <div class="config-section flex-col gap-md flex-1">
+          <div class="config-card flex-col gap-md">
+            <h3>Configuration</h3>
+            
+            <div class="form-group flex-col gap-xs">
+              <label>Project Name</label>
+              <input type="text" [(ngModel)]="request.projectName" class="form-control" placeholder="e.g. Authentication Service" [disabled]="loading" />
+            </div>
+
+            <div class="form-group flex-col gap-xs">
+              <label>Programming Language</label>
+              <select class="form-control" [(ngModel)]="request.language" [disabled]="loading">
+                <option value="Java">Java</option>
+                <option value="TypeScript">TypeScript</option>
+                <option value="Python">Python</option>
+                <option value="C#">C#</option>
+                <option value="Go">Go</option>
               </select>
             </div>
-            <div class="flex items-center gap-sm">
-              <button class="btn btn-ghost">Format</button>
-              <button class="btn btn-ghost">Clear</button>
+
+            <div class="form-group flex-col gap-xs">
+              <label>Review Type</label>
+              <select class="form-control" [(ngModel)]="request.reviewType" [disabled]="loading">
+                <option value="FULL_REVIEW">Full Review</option>
+                <option value="BUG_DETECTION">Bug Detection</option>
+                <option value="SECURITY">Security Analysis</option>
+                <option value="CODE_QUALITY">Code Quality</option>
+              </select>
             </div>
-          </div>
-          
-          <div class="editor-container">
-            <div class="line-numbers flex-col">
-              <span *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12]">{{i}}</span>
+
+            <div class="action-area mt-auto pt-lg">
+              <button class="btn btn-primary w-full btn-lg" (click)="submitReview()" [disabled]="loading || !isValid()">
+                <span class="icon" *ngIf="!loading">✨</span> 
+                {{ loading ? 'Submitting...' : 'Analyze Code' }}
+              </button>
             </div>
-            <textarea class="code-input font-mono" placeholder="Paste your code here..." spellcheck="false"
->public class User {
-    private String id;
-    private String name;
-    
-    public User(String id, String name) {
-        this.id = id;
-        this.name = name;
-    }
-    
-    // TODO: implement getters and setters
-}</textarea>
           </div>
         </div>
 
-        <div class="config-panel flex-col gap-md">
-          <div class="panel-section">
-            <h3>Review Configuration</h3>
-            <div class="options-list flex-col gap-sm">
-              <label class="checkbox-label">
-                <input type="checkbox" checked /> Code Quality
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" checked /> Bug Detection
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" checked /> Security Vulnerabilities
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" /> Refactoring Suggestions
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" /> Generate Unit Tests
-              </label>
-            </div>
-          </div>
-          
-          <div class="panel-section flex-col gap-sm">
-            <p class="text-muted text-sm">AI will analyze your code and provide structured recommendations based on the selected criteria.</p>
-            <button class="btn btn-primary w-full" (click)="analyze()">Analyze Code</button>
-          </div>
-          
-          <div *ngIf="isAnalyzing" class="loading-state flex-col items-center gap-sm">
-             <div class="spinner"></div>
-             <span class="text-secondary">AI is analyzing your code...</span>
-          </div>
-        </div>
       </div>
     </div>
   `,
   styles: [`
-    .workspace {
-      height: calc(100vh - 160px);
-    }
-    .editor-section {
-      flex: 3;
-      min-width: 0;
-    }
-    .config-panel {
-      flex: 1;
-      min-width: 250px;
-      background-color: var(--bg-panel);
-      border: 1px solid var(--bg-panel-border);
-      border-radius: var(--border-radius-lg);
-      padding: var(--spacing-md);
-      height: fit-content;
-    }
-    .toolbar {
-      background-color: var(--bg-panel);
-      padding: 8px 16px;
-      border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
-      border: 1px solid var(--bg-panel-border);
-      border-bottom: none;
-    }
+    .review-layout { min-height: 500px; display: flex; align-items: stretch; }
+    .flex-1 { flex: 1; }
+    .flex-2 { flex: 2; }
+    .h-full { height: 100%; }
+    .mt-auto { margin-top: auto; }
+    .pt-lg { padding-top: var(--spacing-lg); }
+    .w-full { width: 100%; }
+
+    .section-title { font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; }
+    
     .editor-container {
-      flex: 1;
-      display: flex;
-      background-color: #010409;
-      border: 1px solid var(--bg-panel-border);
-      border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+      flex: 1; display: flex; background-color: var(--bg-body);
+      border: 1px solid var(--bg-panel-border); border-radius: var(--border-radius-md);
       overflow: hidden;
     }
-    .line-numbers {
-      padding: 16px 8px;
-      background-color: var(--bg-panel);
-      color: var(--text-muted);
-      font-family: 'Fira Code', monospace;
-      font-size: 14px;
-      line-height: 1.5;
-      text-align: right;
-      user-select: none;
-      border-right: 1px solid var(--bg-panel-border);
+    .code-editor {
+      width: 100%; padding: var(--spacing-md); background: transparent; color: var(--text-primary);
+      border: none; outline: none; resize: none; font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 14px; line-height: 1.5;
     }
-    .code-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #e6edf3;
-      padding: 16px;
-      font-size: 14px;
-      line-height: 1.5;
-      resize: none;
+    .code-editor:focus { box-shadow: inset 0 0 0 1px var(--accent-primary); }
+
+    .config-card {
+      background-color: var(--bg-panel); border: 1px solid var(--bg-panel-border);
+      border-radius: var(--border-radius-lg); padding: var(--spacing-lg); flex: 1;
     }
-    .code-input:focus { outline: none; box-shadow: none; border: none; }
+    .config-card h3 { font-size: 16px; font-weight: 600; border-bottom: 1px solid var(--bg-panel-border); padding-bottom: var(--spacing-sm); margin-bottom: var(--spacing-sm); }
     
-    .panel-section {
-      padding-bottom: var(--spacing-md);
-      border-bottom: 1px solid var(--bg-panel-border);
+    .form-group label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+    .form-control {
+      background-color: var(--bg-body); border: 1px solid var(--bg-panel-border);
+      color: var(--text-primary); padding: 10px 12px; border-radius: var(--border-radius-sm);
+      font-size: 14px; outline: none; transition: border-color 0.2s ease; width: 100%;
     }
-    .panel-section:last-child { border-bottom: none; padding-bottom: 0; }
+    .form-control:focus { border-color: var(--accent-primary); }
     
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-primary);
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .text-sm { font-size: 12px; }
-    
-    .btn {
-      padding: 8px 16px;
-      border-radius: var(--border-radius-md);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
-    }
-    .btn-ghost {
-      background: transparent;
-      color: var(--text-secondary);
-    }
-    .btn-ghost:hover {
-      background: var(--bg-panel-hover);
-      color: var(--text-primary);
-    }
-    .btn-primary {
-      background-color: var(--accent-success);
-      color: white;
-    }
-    .btn-primary:hover { background-color: #2c974b; }
-    
-    .spinner {
-      width: 24px;
-      height: 24px;
-      border: 3px solid var(--bg-panel-border);
-      border-top-color: var(--accent-primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-state { padding: var(--spacing-md) 0; }
+    .btn { padding: 8px 16px; border-radius: var(--border-radius-md); font-weight: 500; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent-primary), #8b5cf6); color: white; }
+    .btn-primary:hover { opacity: 0.9; box-shadow: 0 4px 12px rgba(88, 166, 255, 0.25); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-lg { padding: 12px 24px; font-size: 16px; font-weight: 600; }
+    .error-banner { background-color: rgba(248, 113, 113, 0.1); color: #f87171; padding: 1rem; border-radius: 4px; border: 1px solid rgba(248, 113, 113, 0.2); }
   `]
 })
 export class CodeReview {
-  isAnalyzing = false;
-  
-  analyze() {
-    this.isAnalyzing = true;
-    setTimeout(() => this.isAnalyzing = false, 2000);
+  request: CreateReviewRequest = {
+    projectName: '',
+    language: 'Java',
+    sourceCode: '',
+    reviewType: ReviewType.FULL_REVIEW
+  };
+  loading = false;
+  error = '';
+
+  constructor(
+    private reviewService: ReviewService, 
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  isValid(): boolean {
+    return !!(this.request.projectName && this.request.sourceCode && this.request.language);
+  }
+
+  submitReview() {
+    if (!this.isValid()) return;
+    this.loading = true;
+    this.error = '';
+    
+    this.reviewService.createReview(this.request).subscribe({
+      next: (response) => {
+        this.loading = false;
+        this.router.navigate(['/reviews', response.id]);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = err.error?.message || 'Failed to submit review.';
+        this.cdr.markForCheck();
+        console.error(err);
+      }
+    });
   }
 }

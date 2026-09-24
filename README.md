@@ -16,6 +16,12 @@ The objective is to build an extensible, scalable, and easy-to-use platform for 
 - **Refactoring Suggestions:** Provide clean code recommendations.
 - **Test Generation:** Generate unit tests for submitted code.
 - **History & Dashboard:** Keep track of previous reviews.
+- **AI Project Review MVP:** Import complete software projects via ZIP archives.
+  - Automatically extracts and maps supported source files.
+  - Safely ignores binaries, `node_modules`, `.git`, etc.
+  - Orchestrates asynchronous AI analysis across the entire project.
+  - Aggregates findings and generates a deterministic project-level quality score.
+  - Interactive UI with an Original Code vs Fixed Code diff viewer.
 
 ## 5. Architecture Overview
 The application uses a standard three-tier architecture:

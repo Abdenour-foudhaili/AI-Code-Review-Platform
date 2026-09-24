@@ -108,24 +108,23 @@ export class ProjectImport {
         this.uploading = false;
         this.success = false;
         
-        if (err.error instanceof ErrorEvent) {
-          // Client-side or network error
+                if (err.error instanceof ErrorEvent) {
           this.error = `Network error: ${err.error.message}`;
         } else if (err.status === 0) {
-          // Network disconnection or CORS or MaxUploadSize drop
-          this.error = 'Unable to connect to the backend server. The file might exceed the maximum allowed size (50MB) or the server is unreachable.';
+          this.error = 'Unable to reach the backend server. Please verify that the backend is running on port 8081.';
         } else if (err.status === 413) {
-          this.error = 'Project import failed: file size exceeds the maximum allowed size.';
+          this.error = 'The ZIP file exceeds the maximum allowed size of 50MB.';
+        } else if (err.status === 400) {
+          this.error = 'The project import request is invalid.';
+        } else if (err.status === 500 || err.status > 500) {
+          this.error = 'The server encountered an error while importing the project.';
         } else if (err.error && typeof err.error === 'object') {
-          // Backend returned JSON error
           this.error = `Project import failed: ${err.error.message || err.error.error || 'unexpected error occurred.'}`;
         } else if (typeof err.error === 'string') {
-          // Backend returned plain text
           this.error = `Project import failed: ${err.error}`;
         } else {
           this.error = `Project import failed: the server returned an unexpected error (Status: ${err.status}).`;
         }
-        
         this.cdr.markForCheck();
       }
     });

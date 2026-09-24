@@ -11,6 +11,7 @@ public class ReviewFindingResponse {
     private String title;
     private String description;
     private Integer lineNumber;
+    private String file;
     private String recommendation;
     private String fixedCode;
 }

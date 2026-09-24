@@ -5,8 +5,7 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ReviewDetailsResponse extends ReviewResponse {
-    private String sourceCode;
-    private ReviewSummaryResponse summary;
+public class ProjectDetailsResponse extends ProjectResponse {
     private List<ReviewFindingResponse> findings;
+    private List<ProjectFileResponse> files;
 }

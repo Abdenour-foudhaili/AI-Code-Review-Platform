@@ -23,6 +23,9 @@ import { RouterModule } from '@angular/router';
           <a routerLink="/history" routerLinkActive="active" class="nav-item">
             <span class="icon">🕒</span> History
           </a>
+          <a routerLink="/projects" routerLinkActive="active" class="nav-item">
+            <span class="icon">??</span> Projects
+          </a>
           <a routerLink="/settings" routerLinkActive="active" class="nav-item">
             <span class="icon">⚙️</span> Settings
           </a>

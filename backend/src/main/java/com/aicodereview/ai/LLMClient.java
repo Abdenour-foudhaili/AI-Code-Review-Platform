@@ -35,27 +35,31 @@ public class LLMClient {
 
     public List<ReviewFinding> analyzeCodeChunk(String chunk, ReviewType type, String filename, int lineOffset) {
         if (properties.getApiKey() == null || properties.getApiKey().isEmpty()) {
-            throw new IllegalStateException("AI API key is missing. Configure ai.llm.api-key in application.yml.");
+            throw new IllegalStateException("AI API key is missing. Configure OPENROUTER_API_KEY environment variable.");
         }
 
         String prompt = buildPrompt(chunk, type, filename);
-        
-        String url = properties.getApiUrl() + properties.getModel() + ":generateContent?key=" + properties.getApiKey();
+        String url = properties.getBaseUrl();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(properties.getApiKey());
+        headers.set("HTTP-Referer", "https://github.com/Abdenour-foudhaili/AI-Code-Review-Platform");
+        headers.set("X-Title", "AI Code Review Platform");
 
         String requestBody = String.format("""
             {
-              "contents": [{
-                "parts": [{"text": %s}]
-              }],
-              "generationConfig": {
-                "temperature": %s,
-                "response_mime_type": "application/json"
-              }
+              "model": "%s",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": %s
+                }
+              ],
+              "temperature": %s,
+              "response_format": { "type": "json_object" }
             }
-            """, escapeJson(prompt), properties.getTemperature());
+            """, properties.getModel(), escapeJson(prompt), properties.getTemperature());
 
         HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
         
@@ -72,9 +76,10 @@ public class LLMClient {
         return "You are an expert software engineer and security reviewer.\n" +
                 "Review the following code snippet from file: " + filename + "\n" +
                 "Focus on: " + type.name() + " (Bugs, Security, Code Smells, Maintainability, Refactoring, Performance).\n" +
-                "Do NOT invent issues. If no issues exist, return an empty JSON array [].\n" +
+                "Do NOT invent issues. If no issues exist, return an empty array for 'findings'.\n" +
                 "Distinguish between confirmed issues and suggestions.\n" +
-                "Return the response STRICTLY as a JSON array of objects with these exact keys:\n" +
+                "Return the response STRICTLY as a JSON object containing a 'findings' array.\n" +
+                "Each object in the array must have these exact keys:\n" +
                 "- category (must be one of: BUG, SECURITY, CODE_SMELL, PERFORMANCE, STYLE, BEST_PRACTICE)\n" +
                 "- severity (must be one of: CRITICAL, HIGH, MEDIUM, LOW, INFO)\n" +
                 "- title (string)\n" +
@@ -82,6 +87,7 @@ public class LLMClient {
                 "- lineNumber (integer, line number in the snippet provided)\n" +
                 "- recommendation (string)\n" +
                 "- fixedCode (string, correct code block, optional)\n\n" +
+                "Return JSON ONLY. No markdown, no explanations outside JSON.\n\n" +
                 "Code:\n" + code;
     }
 
@@ -99,45 +105,59 @@ public class LLMClient {
 
         try {
             JsonNode root = objectMapper.readTree(jsonBody);
-            JsonNode candidates = root.path("candidates");
-            if (candidates.isArray() && candidates.size() > 0) {
-                JsonNode parts = candidates.get(0).path("content").path("parts");
-                if (parts.isArray() && parts.size() > 0) {
-                    String text = parts.get(0).path("text").asText();
+            JsonNode choices = root.path("choices");
+            if (choices.isArray() && choices.size() > 0) {
+                JsonNode message = choices.get(0).path("message");
+                if (message.has("content")) {
+                    String text = message.path("content").asText().trim();
                     
-                    List<JsonNode> parsedList = objectMapper.readValue(text, new TypeReference<List<JsonNode>>() {});
-                                        for (JsonNode node : parsedList) {
-                        try {
-                            if (!node.hasNonNull("title") || !node.hasNonNull("category") || !node.hasNonNull("severity")) {
-                                System.err.println("Skipping malformed finding: missing required fields.");
-                                continue;
-                            }
+                    // Strip markdown wrapping if model ignored instructions
+                    if (text.startsWith("```json")) {
+                        text = text.substring(7);
+                    } else if (text.startsWith("```")) {
+                        text = text.substring(3);
+                    }
+                    if (text.endsWith("```")) {
+                        text = text.substring(0, text.length() - 3);
+                    }
+                    text = text.trim();
+                    
+                    JsonNode outputRoot = objectMapper.readTree(text);
+                    JsonNode parsedList = outputRoot.has("findings") ? outputRoot.path("findings") : outputRoot;
+                    
+                    if (parsedList.isArray()) {
+                        for (JsonNode node : parsedList) {
+                            try {
+                                if (!node.hasNonNull("title") || !node.hasNonNull("category") || !node.hasNonNull("severity")) {
+                                    System.err.println("Skipping malformed finding: missing required fields.");
+                                    continue;
+                                }
 
-                            ReviewFinding f = new ReviewFinding();
-                            f.setFile(filename);
-                            f.setTitle(node.path("title").asText());
-                            f.setDescription(node.path("description").asText("No description provided."));
-                            f.setRecommendation(node.path("recommendation").asText(""));
-                            
-                            if (node.hasNonNull("fixedCode")) {
-                                f.setFixedCode(node.path("fixedCode").asText());
+                                ReviewFinding f = new ReviewFinding();
+                                f.setFile(filename);
+                                f.setTitle(node.path("title").asText());
+                                f.setDescription(node.path("description").asText("No description provided."));
+                                f.setRecommendation(node.path("recommendation").asText(""));
+                                
+                                if (node.hasNonNull("fixedCode")) {
+                                    f.setFixedCode(node.path("fixedCode").asText());
+                                }
+                                
+                                f.setCategory(FindingCategory.valueOf(node.path("category").asText()));
+                                f.setSeverity(FindingSeverity.valueOf(node.path("severity").asText()));
+                                
+                                if (node.hasNonNull("lineNumber") && node.path("lineNumber").isInt()) {
+                                    f.setLineNumber(node.path("lineNumber").asInt() + lineOffset);
+                                } else {
+                                    f.setLineNumber(lineOffset > 0 ? lineOffset : 1);
+                                }
+                                
+                                findings.add(f);
+                            } catch (IllegalArgumentException e) {
+                                System.err.println("Skipping finding due to invalid enum value: " + e.getMessage());
+                            } catch (Exception e) {
+                                System.err.println("Skipping malformed finding entry.");
                             }
-                            
-                            // Explicit enum parsing (throws exception if invalid, caught below)
-                            f.setCategory(FindingCategory.valueOf(node.path("category").asText()));
-                            f.setSeverity(FindingSeverity.valueOf(node.path("severity").asText()));
-                            
-                            if (node.hasNonNull("lineNumber") && node.path("lineNumber").isInt()) {
-                                f.setLineNumber(node.path("lineNumber").asInt() + lineOffset);
-                            } else {
-                                f.setLineNumber(lineOffset > 0 ? lineOffset : 1);
-                            }
-                            
-                            findings.add(f);
-                        } catch (IllegalArgumentException e) {
-                            System.err.println("Skipping finding due to invalid enum value: " + e.getMessage());
-                        } catch (Exception e) {
-                            System.err.println("Skipping malformed finding entry.");
                         }
                     }
                 }

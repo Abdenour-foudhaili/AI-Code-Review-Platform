@@ -1,8 +1,11 @@
 ai:
   llm:
-    provider: mock
-    api-key: ${AI_API_KEY:}
-    model: gemini-2.5-flash
+    provider: ${AI_PROVIDER:mock}
+    api-key: ${OPENROUTER_API_KEY:}
+    base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1/chat/completions}
+    model: ${OPENROUTER_MODEL:openai/gpt-3.5-turbo}
+    temperature: ${OPENROUTER_TEMPERATURE:0.1}
+    timeout: ${OPENROUTER_TIMEOUT:60}
 
 spring:
   application:

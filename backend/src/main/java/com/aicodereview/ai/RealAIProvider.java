@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@ConditionalOnProperty(name = "ai.llm.provider", havingValue = "real")
+@ConditionalOnProperty(name = "ai.llm.provider", havingValue = "openrouter")
 public class RealAIProvider implements AIReviewService {
 
     private final CodeReviewRepository repository;

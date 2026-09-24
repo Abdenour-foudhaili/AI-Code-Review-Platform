@@ -36,7 +36,8 @@ public class LLMClientTest {
 
     @Test
     public void testValidJsonResponse() {
-        String mockResponse = "{\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"[{\\\"category\\\": \\\"BUG\\\", \\\"severity\\\": \\\"HIGH\\\", \\\"title\\\": \\\"Null Check\\\", \\\"lineNumber\\\": 10}]\"}]}}]}";
+        String mockResponse = "{\"choices\": [{\"message\": {\"content\": \"{\\\"findings\\\": [{\\\"category\\\": \\\"BUG\\\", \\\"severity\\\": \\\"HIGH\\\", \\\"title\\\": \\\"Null Check\\\", \\\"description\\\": \\\"Desc\\\", \\\"lineNumber\\\": 10}]}\"}}]}";
+        
         when(restTemplateMock.postForEntity(anyString(), any(), any())).thenReturn(new ResponseEntity<>(mockResponse, HttpStatus.OK));
 
         List<ReviewFinding> findings = llmClient.analyzeCodeChunk("String x = null; x.length();", ReviewType.BUG_DETECTION, "Test.java", 0);
@@ -50,7 +51,7 @@ public class LLMClientTest {
 
     @Test
     public void testMissingApiKeyThrowsException() {
-        LLMProperties props = new LLMProperties(); // No API key
+        LLMProperties props = new LLMProperties();
         LLMClient clientNoKey = new LLMClient(props);
         
         assertThrows(IllegalStateException.class, () -> {
@@ -60,7 +61,7 @@ public class LLMClientTest {
 
     @Test
     public void testMalformedJsonResponseReturnsEmptyList() {
-        String mockResponse = "{\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"INVALID JSON CONTENT\"}]}}]}";
+        String mockResponse = "{\"choices\": [{\"message\": {\"content\": \"INVALID JSON CONTENT\"}}]}";
         when(restTemplateMock.postForEntity(anyString(), any(), any())).thenReturn(new ResponseEntity<>(mockResponse, HttpStatus.OK));
 
         List<ReviewFinding> findings = llmClient.analyzeCodeChunk("code", ReviewType.FULL_REVIEW, "test.java", 0);

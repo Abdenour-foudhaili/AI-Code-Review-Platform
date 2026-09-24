@@ -26,6 +26,7 @@ public class ReviewMapper {
         dto.setId(entity.getId());
         dto.setProjectName(entity.getProjectName());
         dto.setLanguage(entity.getLanguage());
+        dto.setSourceCode(entity.getSourceCode());
         dto.setReviewType(entity.getReviewType());
         dto.setStatus(entity.getStatus());
         dto.setCreatedAt(entity.getCreatedAt());

@@ -77,7 +77,7 @@ import { ReviewDetailsResponse } from '../../../core/models/review.model';
               <div class="p-4 text-center text-secondary">No findings detected.</div>
             </div>
 
-            <div class="finding-card card flex-col gap-sm" *ngFor="let finding of review.findings">
+            <div class="finding-card card flex-col gap-sm" *ngFor="let finding of review.findings; let i = index">
               <div class="finding-header flex justify-between items-center">
                 <div class="flex items-center gap-sm">
                   <span class="badge"
@@ -91,15 +91,40 @@ import { ReviewDetailsResponse } from '../../../core/models/review.model';
                 <span class="line-badge" *ngIf="finding.lineNumber">Line {{ finding.lineNumber }}</span>
               </div>
               
-              <p class="finding-desc">{{ finding.description }}</p>
+              <div class="finding-desc">
+                <div class="text-secondary mb-xs font-medium">Problem:</div>
+                <p>{{ finding.description }}</p>
+              </div>
               
               <div class="recommendation-box">
-                <div class="rec-title">Recommendation</div>
+                <div class="rec-title">Recommendation:</div>
                 <div>{{ finding.recommendation }}</div>
               </div>
               
-              <div class="fixed-code" *ngIf="finding.fixedCode">
-                <pre><code>{{ finding.fixedCode }}</code></pre>
+              <div class="fix-container mt-sm" *ngIf="finding.fixedCode">
+                <button class="btn btn-sm btn-outline" (click)="toggleFix(i)">
+                  [{{ showFixMap.get(i) ? 'Hide Fix' : 'View Fix' }}]
+                </button>
+                
+                <div class="fix-diff mt-md flex-col gap-sm" *ngIf="showFixMap.get(i)">
+                  <div class="diff-original" *ngIf="finding.lineNumber && review.sourceCode">
+                    <div class="diff-header">Original Code</div>
+                    <div class="code-block bg-danger-light">
+                      <pre><code>{{ getOriginalCodeSnippet(review.sourceCode, finding.lineNumber) }}</code></pre>
+                    </div>
+                  </div>
+                  
+                  <div class="diff-arrow flex justify-center text-secondary">
+                    ↓
+                  </div>
+                  
+                  <div class="diff-fixed">
+                    <div class="diff-header text-success">Fixed Code</div>
+                    <div class="code-block bg-success-light">
+                      <pre><code>{{ finding.fixedCode }}</code></pre>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -145,7 +170,17 @@ import { ReviewDetailsResponse } from '../../../core/models/review.model';
     .finding-desc { color: var(--text-secondary); font-size: 14px; margin: 8px 0; }
     .recommendation-box { background: rgba(88, 166, 255, 0.05); border-left: 3px solid var(--accent-primary); padding: 12px; font-size: 14px; color: var(--text-primary); }
     .rec-title { font-weight: 600; color: var(--accent-primary); margin-bottom: 4px; font-size: 12px; text-transform: uppercase; }
-    .fixed-code { background: #1e1e1e; padding: 12px; border-radius: 6px; overflow-x: auto; font-family: 'Fira Code', monospace; font-size: 13px; margin-top: 8px; }
+    
+    .code-block { background: #1e1e1e; padding: 12px; border-radius: 6px; overflow-x: auto; font-family: 'Fira Code', monospace; font-size: 13px; margin-top: 4px; border: 1px solid rgba(255,255,255,0.1); }
+    .bg-danger-light { background: rgba(248, 81, 73, 0.05); border-color: rgba(248, 81, 73, 0.2); }
+    .bg-success-light { background: rgba(46, 160, 67, 0.05); border-color: rgba(46, 160, 67, 0.2); }
+    
+    .diff-header { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+    .text-success { color: var(--accent-success); }
+    .mb-xs { margin-bottom: 4px; }
+    .mt-sm { margin-top: 8px; }
+    .mt-md { margin-top: 16px; }
+    
     .p-0 { padding: 0 !important; }
     .p-4 { padding: 16px; }
   `]
@@ -156,6 +191,7 @@ export class ReviewDetails implements OnInit {
   error = '';
   analyzing = false;
   id!: number;
+  showFixMap = new Map<number, boolean>();
 
   constructor(
     private route: ActivatedRoute, 
@@ -168,6 +204,21 @@ export class ReviewDetails implements OnInit {
     if (this.id) {
       this.loadReview();
     }
+  }
+
+  toggleFix(index: number) {
+    this.showFixMap.set(index, !this.showFixMap.get(index));
+    this.cdr.markForCheck();
+  }
+
+  getOriginalCodeSnippet(sourceCode: string, lineNumber: number): string {
+    if (!sourceCode || !lineNumber) return '';
+    const lines = sourceCode.split('\n');
+    const idx = lineNumber - 1;
+    if (idx >= 0 && idx < lines.length) {
+      return lines[idx].trim();
+    }
+    return '';
   }
 
   loadReview() {

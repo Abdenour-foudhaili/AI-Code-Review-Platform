@@ -82,6 +82,7 @@ export interface ReviewSummaryResponse {
   summary: string;
 }
 export interface ReviewDetailsResponse extends ReviewResponse {
+  sourceCode: string;
   summary: ReviewSummaryResponse;
   findings: ReviewFindingResponse[];
 }

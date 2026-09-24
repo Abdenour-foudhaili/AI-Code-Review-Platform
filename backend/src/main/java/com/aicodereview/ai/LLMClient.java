@@ -106,36 +106,38 @@ public class LLMClient {
                     String text = parts.get(0).path("text").asText();
                     
                     List<JsonNode> parsedList = objectMapper.readValue(text, new TypeReference<List<JsonNode>>() {});
-                    for (JsonNode node : parsedList) {
+                                        for (JsonNode node : parsedList) {
                         try {
+                            if (!node.hasNonNull("title") || !node.hasNonNull("category") || !node.hasNonNull("severity")) {
+                                System.err.println("Skipping malformed finding: missing required fields.");
+                                continue;
+                            }
+
                             ReviewFinding f = new ReviewFinding();
                             f.setFile(filename);
-                            f.setTitle(node.path("title").asText("Issue"));
-                            f.setDescription(node.path("description").asText(""));
+                            f.setTitle(node.path("title").asText());
+                            f.setDescription(node.path("description").asText("No description provided."));
                             f.setRecommendation(node.path("recommendation").asText(""));
-                            if (node.has("fixedCode")) {
-                                f.setFixedCode(node.path("fixedCode").asText(""));
+                            
+                            if (node.hasNonNull("fixedCode")) {
+                                f.setFixedCode(node.path("fixedCode").asText());
                             }
                             
-                            // Safe enum parsing
-                            try {
-                                f.setCategory(FindingCategory.valueOf(node.path("category").asText("CODE_SMELL")));
-                            } catch (Exception e) {
-                                f.setCategory(FindingCategory.CODE_SMELL);
-                            }
+                            // Explicit enum parsing (throws exception if invalid, caught below)
+                            f.setCategory(FindingCategory.valueOf(node.path("category").asText()));
+                            f.setSeverity(FindingSeverity.valueOf(node.path("severity").asText()));
                             
-                            try {
-                                f.setSeverity(FindingSeverity.valueOf(node.path("severity").asText("INFO")));
-                            } catch (Exception e) {
-                                f.setSeverity(FindingSeverity.INFO);
-                            }
-                            
-                            if (node.has("lineNumber") && node.path("lineNumber").isInt()) {
+                            if (node.hasNonNull("lineNumber") && node.path("lineNumber").isInt()) {
                                 f.setLineNumber(node.path("lineNumber").asInt() + lineOffset);
+                            } else {
+                                f.setLineNumber(lineOffset > 0 ? lineOffset : 1);
                             }
+                            
                             findings.add(f);
+                        } catch (IllegalArgumentException e) {
+                            System.err.println("Skipping finding due to invalid enum value: " + e.getMessage());
                         } catch (Exception e) {
-                            // Skip malformed entries
+                            System.err.println("Skipping malformed finding entry.");
                         }
                     }
                 }

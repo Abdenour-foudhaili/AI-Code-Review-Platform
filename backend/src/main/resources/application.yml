@@ -1,7 +1,7 @@
 ai:
   llm:
     provider: mock
-    api-key: ${AI_API_KEY:mock_key}
+    api-key: ${AI_API_KEY:}
     model: gemini-2.5-flash
 
 spring:

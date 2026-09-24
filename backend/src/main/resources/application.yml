@@ -1,6 +1,10 @@
 spring:
   application:
     name: ai-code-review-backend
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/aicodereview?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC}
     username: ${DB_USER:root}

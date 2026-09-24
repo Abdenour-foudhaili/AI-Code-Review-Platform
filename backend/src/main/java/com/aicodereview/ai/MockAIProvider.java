@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Random;
 
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "ai.llm.provider", havingValue = "mock", matchIfMissing = true)
 public class MockAIProvider implements AIReviewService {
 
     private final CodeReviewRepository repository;
@@ -135,3 +136,4 @@ public class MockAIProvider implements AIReviewService {
         return defaultLine;
     }
 }
+

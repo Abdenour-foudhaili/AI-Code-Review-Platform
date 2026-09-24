@@ -1,3 +1,9 @@
+ai:
+  llm:
+    provider: mock
+    api-key: ${AI_API_KEY:mock_key}
+    model: gemini-2.5-flash
+
 spring:
   application:
     name: ai-code-review-backend

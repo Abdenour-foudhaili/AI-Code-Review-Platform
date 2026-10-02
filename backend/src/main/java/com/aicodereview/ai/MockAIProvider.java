@@ -21,7 +21,7 @@ public class MockAIProvider implements AIReviewService {
     }
 
     @Override
-    public List<ReviewFinding> analyzeSourceCode(String sourceCode, ReviewType type, String filename) {
+    public List<ReviewFinding> analyzeSourceCode(String sourceCode, ReviewType type, String filename, String modelId) {
         List<ReviewFinding> findings = new ArrayList<>();
         if (type == ReviewType.FULL_REVIEW || type == ReviewType.SECURITY) {
             findings.addAll(generateSecurityFindings(sourceCode));
@@ -43,13 +43,13 @@ public class MockAIProvider implements AIReviewService {
 
     @org.springframework.transaction.annotation.Transactional
     @Override
-    public void performReview(CodeReview detachedReview) {
+    public void performReview(CodeReview detachedReview, String modelId) {
         try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
 
         CodeReview review = repository.findById(detachedReview.getId()).orElse(null);
         if (review == null) return;
 
-        List<ReviewFinding> findings = analyzeSourceCode(review.getSourceCode(), review.getReviewType(), "SingleFile");
+        List<ReviewFinding> findings = analyzeSourceCode(review.getSourceCode(), review.getReviewType(), "SingleFile.java", modelId);
 
 
         int critical = 0, high = 0, medium = 0, low = 0;

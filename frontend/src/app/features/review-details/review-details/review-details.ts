@@ -238,9 +238,9 @@ export class ReviewDetails implements OnInit {
     });
   }
 
-  analyze() {
+  analyze(modelId: string = 'openrouter/free') {
     this.analyzing = true;
-    this.reviewService.analyzeReview(this.id).subscribe({
+    this.reviewService.analyzeReview(this.id, modelId).subscribe({
       next: () => {
         this.analyzing = false;
         this.loadReview(); // refresh the view

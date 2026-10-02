@@ -26,7 +26,7 @@ export class ReviewService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  analyzeReview(id: number): Observable<ReviewResponse> {
-    return this.http.post<ReviewResponse>(`${this.apiUrl}/${id}/analyze`, {});
+  analyzeReview(id: number, modelId: string = 'openrouter/free'): Observable<ReviewResponse> {
+    return this.http.post<ReviewResponse>(`${this.apiUrl}/${id}/analyze?model=${modelId}`, {});
   }
 }

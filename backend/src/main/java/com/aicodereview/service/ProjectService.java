@@ -51,9 +51,25 @@ public class ProjectService {
         repository.deleteById(id);
     }
     
-    public void analyzeProject(Long id) {
+    @Transactional
+    public synchronized void analyzeProject(Long id, String modelId) {
         Project p = getProject(id);
-        if (p.getStatus() == ProjectStatus.ANALYZING) throw new RuntimeException("Already analyzing");
-        orchestrator.runProjectAnalysis(id);
+        
+        if (p.getStatus() == ProjectStatus.ANALYZING) {
+            // Recover stale analysis if stuck for more than 10 minutes
+            if (p.getUpdatedAt() != null && p.getUpdatedAt().isBefore(LocalDateTime.now().minusMinutes(10))) {
+                p.setStatus(ProjectStatus.FAILED);
+                repository.save(p); // explicitly save the fallback state if needed
+            } else {
+                throw new RuntimeException("Already analyzing");
+            }
+        }
+        
+        // Immediately set state to ANALYZING before async execution to prevent duplicate requests
+        p.setStatus(ProjectStatus.ANALYZING);
+        p.setUpdatedAt(LocalDateTime.now());
+        repository.save(p);
+        
+        orchestrator.runProjectAnalysis(id, modelId);
     }
 }

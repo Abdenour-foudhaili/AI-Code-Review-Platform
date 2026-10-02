@@ -5,6 +5,6 @@ import com.aicodereview.entity.ReviewType;
 import java.util.List;
 
 public interface AIReviewService {
-    void performReview(CodeReview codeReview);
-    List<ReviewFinding> analyzeSourceCode(String sourceCode, ReviewType type, String filename);
+    void performReview(CodeReview codeReview, String modelId);
+    List<ReviewFinding> analyzeSourceCode(String sourceCode, ReviewType type, String filename, String modelId);
 }

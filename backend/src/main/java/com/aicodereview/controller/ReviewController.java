@@ -41,7 +41,7 @@ public class ReviewController {
     }
 
     @PostMapping("/{id}/analyze")
-    public ReviewResponse analyzeReview(@PathVariable Long id) {
-        return reviewService.analyzeReview(id);
+    public ReviewResponse analyzeReview(@PathVariable Long id, @RequestParam(value = "model", required = false) String modelId) {
+        return reviewService.analyzeReview(id, modelId);
     }
 }

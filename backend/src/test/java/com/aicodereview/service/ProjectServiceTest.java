@@ -23,6 +23,39 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class ProjectServiceTest {
 
+    @Test
+    void analyzeProject_rejectsDuplicate() {
+        Project p = new Project();
+        p.setId(2L);
+        p.setStatus(ProjectStatus.ANALYZING);
+        p.setUpdatedAt(java.time.LocalDateTime.now());
+        
+        when(repository.findById(2L)).thenReturn(Optional.of(p));
+        
+        assertThrows(RuntimeException.class, () -> {
+            service.analyzeProject(2L, "openrouter/free");
+        }, "Already analyzing");
+    }
+
+    @Test
+    void analyzeProject_recoversStale() {
+        Project p = new Project();
+        p.setId(3L);
+        p.setStatus(ProjectStatus.ANALYZING);
+        // Stale: older than 10 mins
+        p.setUpdatedAt(java.time.LocalDateTime.now().minusMinutes(15));
+        
+        when(repository.findById(3L)).thenReturn(Optional.of(p));
+        
+        // This should not throw
+        service.analyzeProject(3L, "openrouter/free");
+        
+        // Ensure the status was set back to ANALYZING by the new request
+        assertEquals(ProjectStatus.COMPLETED, p.getStatus());
+        verify(repository, atLeastOnce()).save(p);
+    }
+
+
     @Mock
     private ProjectRepository repository;
     
@@ -37,7 +70,8 @@ public class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
-        orchestrator = new ProjectAnalysisOrchestrator(repository, aiReviewService);
+        ProjectAnalysisTransactionService txService = new ProjectAnalysisTransactionService(repository, aiReviewService);
+        orchestrator = new ProjectAnalysisOrchestrator(txService);
         service = new ProjectService(repository, scanner, orchestrator);
     }
 
@@ -111,9 +145,9 @@ public class ProjectServiceTest {
         f.setSeverity(FindingSeverity.HIGH);
         mockFindings.add(f);
         
-        when(aiReviewService.analyzeSourceCode(any(), any(), any())).thenReturn(mockFindings);
+        when(aiReviewService.analyzeSourceCode(any(), any(), any(), any())).thenReturn(mockFindings);
         
-        orchestrator.analyzeInTransaction(1L);
+        new ProjectAnalysisTransactionService(repository, aiReviewService).analyzeProjectInTransaction(1L, "openrouter/free");
         
         assertEquals(ProjectStatus.COMPLETED, p.getStatus());
         assertEquals("C", p.getQualityScore());

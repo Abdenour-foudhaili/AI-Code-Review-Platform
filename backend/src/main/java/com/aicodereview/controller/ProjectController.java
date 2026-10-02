@@ -53,9 +53,9 @@ public class ProjectController {
     }
     
     @PostMapping("/{id}/analyze")
-    public ResponseEntity<?> analyzeProject(@PathVariable Long id) {
+    public ResponseEntity<?> analyzeProject(@PathVariable Long id, @RequestParam(value = "model", required = false) String modelId) {
         try {
-            projectService.analyzeProject(id);
+            projectService.analyzeProject(id, modelId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

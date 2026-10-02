@@ -3,7 +3,7 @@ ai:
     provider: ${AI_PROVIDER:mock}
     api-key: ${OPENROUTER_API_KEY:}
     base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1/chat/completions}
-    model: ${OPENROUTER_MODEL:openai/gpt-3.5-turbo}
+    model: ${OPENROUTER_MODEL:openrouter/free}
     temperature: ${OPENROUTER_TEMPERATURE:0.1}
     timeout: ${OPENROUTER_TIMEOUT:60}
 

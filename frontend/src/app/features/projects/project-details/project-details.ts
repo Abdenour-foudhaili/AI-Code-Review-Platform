@@ -25,7 +25,15 @@ import { ProjectDetailsResponse } from '../../../core/models/project.model';
           </div>
           <div class="flex gap-sm">
             <button class="btn btn-outline" routerLink="/projects">Back to Projects</button>
-            <button class="btn btn-primary" *ngIf="project.status !== 'ANALYZING'" (click)="analyze()">Analyze Project</button>
+            
+            <select #modelSelect class="btn btn-outline" style="background: white; border: 1px solid #ccc; color: #333; margin-right: 8px;">
+              <option value="openrouter/free">🆓 OpenRouter Free</option>
+              <option value="google/gemma-4-31b-it:free">🆓 Gemma 4 31B</option>
+              <option value="meta-llama/llama-3.1-8b-instruct:free">🆓 Llama 3.1 8B</option>
+              <option value="cohere/north-mini-code:free">🆓 Cohere North</option>
+            </select>
+            <button class="btn btn-primary" *ngIf="project.status !== 'ANALYZING'" (click)="analyze(modelSelect.value)">Analyze Project</button>
+
           </div>
         </header>
 
@@ -235,7 +243,7 @@ export class ProjectDetails implements OnInit {
     });
   }
 
-  analyze() {
+  analyze(modelId: string = 'openrouter/free') {
     this.projectService.analyzeProject(this.id).subscribe({
       next: () => {
         this.loadProject();

@@ -29,8 +29,8 @@ export class ProjectService {
     return this.http.post<ProjectResponse>(this.apiUrl, formData);
   }
 
-  analyzeProject(id: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${id}/analyze`, {});
+  analyzeProject(id: number, modelId: string = 'openrouter/free'): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${id}/analyze?model=${modelId}`, {});
   }
 
   deleteProject(id: number): Observable<void> {

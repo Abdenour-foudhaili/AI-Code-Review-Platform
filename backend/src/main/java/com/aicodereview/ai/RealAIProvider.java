@@ -22,7 +22,7 @@ public class RealAIProvider implements AIReviewService {
     }
 
     @Override
-    public List<ReviewFinding> analyzeSourceCode(String sourceCode, ReviewType type, String filename) {
+    public List<ReviewFinding> analyzeSourceCode(String sourceCode, ReviewType type, String filename, String modelId) {
         if (sourceCode == null || sourceCode.trim().isEmpty()) {
             return new ArrayList<>();
         }
@@ -30,7 +30,7 @@ public class RealAIProvider implements AIReviewService {
         // Chunking strategy for large files (e.g., > 12000 chars)
         int maxChunkSize = 12000;
         if (sourceCode.length() <= maxChunkSize) {
-            List<ReviewFinding> findings = llmClient.analyzeCodeChunk(sourceCode, type, filename, 0);
+            List<ReviewFinding> findings = llmClient.analyzeCodeChunk(sourceCode, type, filename, 0, modelId);
             return findings != null ? findings : new ArrayList<>();
         }
         
@@ -43,8 +43,7 @@ public class RealAIProvider implements AIReviewService {
             currentChunk.append(lines[i]).append("\n");
             // If chunk reaches max size or it's the last line
             if (currentChunk.length() >= maxChunkSize || i == lines.length - 1) {
-                List<ReviewFinding> chunkFindings = llmClient.analyzeCodeChunk(
-                        currentChunk.toString(), type, filename, chunkStartLine - 1);
+                List<ReviewFinding> chunkFindings = llmClient.analyzeCodeChunk(currentChunk.toString(), type, filename, chunkStartLine - 1, modelId);
                         
                 if (chunkFindings != null) {
                     allFindings.addAll(chunkFindings);
@@ -58,12 +57,12 @@ public class RealAIProvider implements AIReviewService {
 
     @org.springframework.transaction.annotation.Transactional
     @Override
-    public void performReview(CodeReview detachedReview) {
+    public void performReview(CodeReview detachedReview, String modelId) {
         CodeReview review = repository.findById(detachedReview.getId()).orElse(null);
         if (review == null) return;
         
         try {
-            List<ReviewFinding> findings = analyzeSourceCode(review.getSourceCode(), review.getReviewType(), "SingleFile");
+            List<ReviewFinding> findings = analyzeSourceCode(review.getSourceCode(), review.getReviewType(), "SingleFile.java", modelId);
 
             int critical = 0, high = 0, medium = 0, low = 0;
             for (ReviewFinding f : findings) {

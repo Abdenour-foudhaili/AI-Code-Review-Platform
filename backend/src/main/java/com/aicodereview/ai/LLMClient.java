@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -28,14 +29,38 @@ public class LLMClient {
 
     public LLMClient(LLMProperties properties) {
         this.properties = properties;
-        this.restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000);
+        factory.setReadTimeout(properties.getTimeout() * 1000);
+        this.restTemplate = new RestTemplate(factory);
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    public List<ReviewFinding> analyzeCodeChunk(String chunk, ReviewType type, String filename, int lineOffset) {
+    public List<ReviewFinding> analyzeCodeChunk(String chunk, ReviewType type, String filename, int lineOffset, String requestedModelId) {
         if (properties.getApiKey() == null || properties.getApiKey().isEmpty()) {
             throw new IllegalStateException("AI API key is missing. Configure OPENROUTER_API_KEY environment variable.");
+        }
+
+        
+        String resolvedModelId = (requestedModelId != null && !requestedModelId.isEmpty()) ? requestedModelId : properties.getModel();
+        
+        List<String> allowedModels = java.util.Arrays.asList(
+            "openrouter/free",
+            "cohere/north-mini-code:free",
+            "google/gemma-4-31b-it:free",
+            "google/gemma-4-26b-a4b-it:free",
+            "mistralai/mistral-nemo:free",
+            "meta-llama/llama-3.1-8b-instruct:free",
+            "qwen/qwen-2.5-coder-32b-instruct:free"
+        );
+        
+        if (!allowedModels.contains(resolvedModelId)) {
+            if (requestedModelId == null || requestedModelId.trim().isEmpty()) {
+                resolvedModelId = "openrouter/free";
+            } else {
+                throw new IllegalArgumentException("Model not allowed. Only whitelisted FREE models are permitted.");
+            }
         }
 
         String prompt = buildPrompt(chunk, type, filename);
@@ -59,17 +84,39 @@ public class LLMClient {
               "temperature": %s,
               "response_format": { "type": "json_object" }
             }
-            """, properties.getModel(), escapeJson(prompt), properties.getTemperature());
+            """, resolvedModelId, escapeJson(prompt), properties.getTemperature());
 
         HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
         
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-            return parseResponse(response.getBody(), filename, lineOffset);
-        } catch (Exception e) {
-            System.err.println("Error calling LLM API: " + e.getMessage());
-            throw new RuntimeException("LLM Provider error: " + e.getMessage(), e);
+        int maxAttempts = 3;
+        long backoff = 1000;
+        
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+                return parseResponse(response.getBody(), filename, lineOffset);
+            } catch (org.springframework.web.client.ResourceAccessException e) {
+                if (attempt == maxAttempts) {
+                    System.err.println("LLM Provider error after " + maxAttempts + " attempts: " + e.getMessage());
+                    throw new RuntimeException("LLM Provider error: " + e.getMessage(), e);
+                }
+                System.out.println("LLM request failed due to transient network error. Retrying attempt " + (attempt + 1) + "/" + maxAttempts + "...");
+                try {
+                    Thread.sleep(backoff);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted during retry backoff", ie);
+                }
+                backoff *= 2;
+            } catch (org.springframework.web.client.HttpStatusCodeException e) {
+                System.err.println("Error calling LLM API (HTTP " + e.getStatusCode() + "): " + e.getMessage());
+                throw new RuntimeException("LLM Provider error: HTTP " + e.getStatusCode() + " - " + e.getMessage(), e);
+            } catch (Exception e) {
+                System.err.println("Error calling LLM API: " + e.getMessage());
+                throw new RuntimeException("LLM Provider error: " + e.getMessage(), e);
+            }
         }
+        return new ArrayList<>();
     }
 
     private String buildPrompt(String code, ReviewType type, String filename) {

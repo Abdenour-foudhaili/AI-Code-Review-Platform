@@ -11,7 +11,7 @@ public class LLMProperties {
     private String provider = "mock"; // "mock" or "openrouter"
     private String baseUrl = "https://openrouter.ai/api/v1/chat/completions";
     private String apiKey;
-    private String model = "openai/gpt-3.5-turbo";
+    private String model = "openrouter/free";
     private int timeout = 60;
     private double temperature = 0.1;
 }

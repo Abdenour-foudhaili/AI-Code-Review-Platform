@@ -1,0 +1,6 @@
+.auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg-main); }
+.auth-card { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.logo-icon { font-family: 'Fira Code', monospace; font-weight: 700; color: var(--accent-primary); background: rgba(88,166,255,.1); padding: 4px 8px; border-radius: 4px; }
+.auth-card input { width: 100%; }
+.alt { font-size: 14px; color: var(--text-secondary); text-align: center; }

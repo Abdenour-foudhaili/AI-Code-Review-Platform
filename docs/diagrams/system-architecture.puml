@@ -1,0 +1,33 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+
+actor User
+
+node "Frontend (Angular)" {
+  [Web Interface]
+}
+
+node "Backend (Spring Boot)" {
+  [REST Controllers]
+  [Business Services]
+  [AI Service Interface]
+  [Data Repositories]
+}
+
+database "MySQL Database" {
+  [Tables]
+}
+
+cloud "External AI Provider" {
+  [LLM API]
+}
+
+User --> [Web Interface] : HTTP / JSON
+[Web Interface] --> [REST Controllers] : REST API
+[REST Controllers] --> [Business Services]
+[Business Services] --> [AI Service Interface]
+[Business Services] --> [Data Repositories]
+[Data Repositories] --> [Tables] : SQL
+[AI Service Interface] --> [LLM API] : HTTP Request
+@enduml

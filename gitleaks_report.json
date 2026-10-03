@@ -1,0 +1,22 @@
+[
+ {
+  "RuleID": "generic-api-key",
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 8,
+  "EndLine": 8,
+  "StartColumn": 2,
+  "EndColumn": 39,
+  "Match": "API_TOKEN = \"sk-test-1234567890abcdef\"",
+  "Secret": "sk-test-1234567890abcdef",
+  "File": "vuln_test_project/vuln_test_project/app/config.py",
+  "SymlinkFile": "",
+  "Commit": "",
+  "Entropy": 4.2516294,
+  "Author": "",
+  "Email": "",
+  "Date": "",
+  "Message": "",
+  "Tags": [],
+  "Fingerprint": "vuln_test_project/vuln_test_project/app/config.py:generic-api-key:8"
+ }
+]

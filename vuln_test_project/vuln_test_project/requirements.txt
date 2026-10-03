@@ -1,0 +1,4 @@
+flask==0.12
+requests==2.19.0
+pyyaml==3.12
+pycryptodome==3.6.0

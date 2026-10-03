@@ -1,0 +1,62 @@
+ai:
+  llm:
+    # mock | gemini | openrouter | mistral | groq  (gemini = Gemini 2.5 Flash, free tier, 1M-token context)
+    provider: ${LLM_PROVIDER:${AI_PROVIDER:mock}}
+    api-key: ${LLM_API_KEY:${OPENROUTER_API_KEY:}}
+    base-url: ${LLM_BASE_URL:}
+    model: ${LLM_MODEL:}
+    temperature: ${LLM_TEMPERATURE:0.1}
+    timeout: ${LLM_TIMEOUT:90}
+    min-interval-ms: ${LLM_MIN_INTERVAL_MS:7000}
+    allowed-models: ${LLM_ALLOWED_MODELS:}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  security:
+    jwt-secret: ${JWT_SECRET:}
+    jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:15}
+    refresh-expiration-days: ${REFRESH_EXPIRATION_DAYS:7}
+    cookie-secure: ${COOKIE_SECURE:false}
+    token-encryption-key: ${TOKEN_ENCRYPTION_KEY:}
+    admin-email: ${ADMIN_EMAIL:}
+    admin-password: ${ADMIN_PASSWORD:}
+
+github:
+  client-id: ${GITHUB_CLIENT_ID:}
+  client-secret: ${GITHUB_CLIENT_SECRET:}
+  redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8081/api/github/callback}
+  scope: ${GITHUB_SCOPE:repo read:user}
+
+analysis:
+  max-file-bytes: 200000
+  max-files: 1500
+  max-repo-bytes: 104857600
+  max-uncompressed-bytes: 62914560
+  ai-max-files: ${ANALYSIS_AI_MAX_FILES:12}
+  ai-max-chars-per-file: 12000
+
+spring:
+  application:
+    name: ai-code-review-backend
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/aicodereview?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+server:
+  port: 8081
+  tomcat:
+    max-swallow-size: -1

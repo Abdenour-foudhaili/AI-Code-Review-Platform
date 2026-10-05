@@ -26,6 +26,7 @@ public class ReviewMapper {
         dto.setId(entity.getId());
         dto.setProjectName(entity.getProjectName());
         dto.setLanguage(entity.getLanguage());
+        dto.setSourceCode(entity.getSourceCode());
         dto.setReviewType(entity.getReviewType());
         dto.setStatus(entity.getStatus());
         dto.setCreatedAt(entity.getCreatedAt());
@@ -51,6 +52,7 @@ public class ReviewMapper {
         dto.setTitle(entity.getTitle());
         dto.setDescription(entity.getDescription());
         dto.setLineNumber(entity.getLineNumber());
+        dto.setFile(entity.getFile());
         dto.setRecommendation(entity.getRecommendation());
         dto.setFixedCode(entity.getFixedCode());
         return dto;

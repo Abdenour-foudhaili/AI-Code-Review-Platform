@@ -33,7 +33,7 @@ public class MockAIProviderTest {
         
         when(repository.findById(1L)).thenReturn(Optional.of(review));
         
-        aiProvider.performReview(review);
+        aiProvider.performReview(review, "openrouter/free");
 
         assertEquals(ReviewStatus.COMPLETED, review.getStatus());
         assertNotNull(review.getSummary());
@@ -52,7 +52,7 @@ public class MockAIProviderTest {
         
         when(repository.findById(2L)).thenReturn(Optional.of(review));
         
-        aiProvider.performReview(review);
+        aiProvider.performReview(review, "openrouter/free");
 
         assertEquals(ReviewStatus.COMPLETED, review.getStatus());
         assertTrue(review.getFindings().stream().allMatch(f -> f.getCategory() == FindingCategory.SECURITY));
@@ -68,7 +68,7 @@ public class MockAIProviderTest {
         
         when(repository.findById(3L)).thenReturn(Optional.of(review));
         
-        aiProvider.performReview(review);
+        aiProvider.performReview(review, "openrouter/free");
 
         assertEquals(ReviewStatus.COMPLETED, review.getStatus());
         assertTrue(review.getFindings().stream().allMatch(f -> f.getCategory() == FindingCategory.BUG));
@@ -84,7 +84,7 @@ public class MockAIProviderTest {
         
         when(repository.findById(4L)).thenReturn(Optional.of(review));
         
-        aiProvider.performReview(review);
+        aiProvider.performReview(review, "openrouter/free");
 
         assertEquals(ReviewStatus.COMPLETED, review.getStatus());
         assertFalse(review.getFindings().isEmpty());
@@ -97,7 +97,7 @@ public class MockAIProviderTest {
         
         when(repository.findById(5L)).thenReturn(Optional.empty());
         
-        assertDoesNotThrow(() -> aiProvider.performReview(review));
+        assertDoesNotThrow(() -> aiProvider.performReview(review, "openrouter/free"));
         verify(repository, never()).save(any());
     }
 }

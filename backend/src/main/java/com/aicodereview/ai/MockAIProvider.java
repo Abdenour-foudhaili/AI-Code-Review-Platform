@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Random;
 
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "ai.llm.provider", havingValue = "mock", matchIfMissing = true)
 public class MockAIProvider implements AIReviewService {
 
     private final CodeReviewRepository repository;
@@ -19,31 +20,37 @@ public class MockAIProvider implements AIReviewService {
         this.repository = repository;
     }
 
+    @Override
+    public List<ReviewFinding> analyzeSourceCode(String sourceCode, ReviewType type, String filename, String modelId) {
+        List<ReviewFinding> findings = new ArrayList<>();
+        if (type == ReviewType.FULL_REVIEW || type == ReviewType.SECURITY) {
+            findings.addAll(generateSecurityFindings(sourceCode));
+        }
+        if (type == ReviewType.FULL_REVIEW || type == ReviewType.BUG_DETECTION) {
+            findings.addAll(generateBugFindings(sourceCode));
+        }
+        if (type == ReviewType.FULL_REVIEW || type == ReviewType.CODE_QUALITY) {
+            findings.addAll(generateCodeSmellFindings(sourceCode));
+        }
+        if (findings.isEmpty()) {
+            findings.addAll(generateCodeSmellFindings(sourceCode));
+        }
+        for (ReviewFinding f : findings) {
+            f.setFile(filename);
+        }
+        return findings;
+    }
+
     @org.springframework.transaction.annotation.Transactional
     @Override
-    public void performReview(CodeReview detachedReview) {
+    public void performReview(CodeReview detachedReview, String modelId) {
         try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
 
         CodeReview review = repository.findById(detachedReview.getId()).orElse(null);
         if (review == null) return;
 
-        List<ReviewFinding> findings = new ArrayList<>();
+        List<ReviewFinding> findings = analyzeSourceCode(review.getSourceCode(), review.getReviewType(), "SingleFile.java", modelId);
 
-        if (review.getReviewType() == ReviewType.FULL_REVIEW || review.getReviewType() == ReviewType.SECURITY) {
-            findings.addAll(generateSecurityFindings(review.getSourceCode()));
-        }
-        
-        if (review.getReviewType() == ReviewType.FULL_REVIEW || review.getReviewType() == ReviewType.BUG_DETECTION) {
-            findings.addAll(generateBugFindings(review.getSourceCode()));
-        }
-
-        if (review.getReviewType() == ReviewType.FULL_REVIEW || review.getReviewType() == ReviewType.CODE_QUALITY) {
-            findings.addAll(generateCodeSmellFindings(review.getSourceCode()));
-        }
-
-        if (findings.isEmpty()) {
-            findings.addAll(generateCodeSmellFindings(review.getSourceCode()));
-        }
 
         int critical = 0, high = 0, medium = 0, low = 0;
         for (ReviewFinding f : findings) {
@@ -129,3 +136,4 @@ public class MockAIProvider implements AIReviewService {
         return defaultLine;
     }
 }
+

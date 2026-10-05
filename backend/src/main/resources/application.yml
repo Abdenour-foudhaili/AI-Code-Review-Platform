@@ -1,6 +1,19 @@
+ai:
+  llm:
+    provider: ${AI_PROVIDER:mock}
+    api-key: ${OPENROUTER_API_KEY:}
+    base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1/chat/completions}
+    model: ${OPENROUTER_MODEL:openrouter/free}
+    temperature: ${OPENROUTER_TEMPERATURE:0.1}
+    timeout: ${OPENROUTER_TIMEOUT:60}
+
 spring:
   application:
     name: ai-code-review-backend
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/aicodereview?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC}
     username: ${DB_USER:root}
@@ -17,3 +30,5 @@ spring:
 
 server:
   port: 8081
+  tomcat:
+    max-swallow-size: -1

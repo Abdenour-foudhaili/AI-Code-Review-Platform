@@ -63,7 +63,7 @@ public class ReviewService {
     }
 
     @Transactional
-    public ReviewResponse analyzeReview(Long id) {
+    public ReviewResponse analyzeReview(Long id, String modelId) {
         CodeReview review = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + id));
         
@@ -75,7 +75,7 @@ public class ReviewService {
         repository.save(review);
         
         // In a real app, this should be async (e.g. using @Async or message queue)
-        new Thread(() -> aiService.performReview(review)).start();
+        new Thread(() -> aiService.performReview(review, modelId)).start();
         
         return mapper.toResponse(review);
     }

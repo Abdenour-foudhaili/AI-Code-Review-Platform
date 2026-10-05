@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -127,17 +128,17 @@ public class ReviewServiceTest {
         when(mapper.toResponse(any(CodeReview.class))).thenReturn(response);
         when(repository.save(any(CodeReview.class))).thenReturn(mockReview);
 
-        ReviewResponse result = service.analyzeReview(1L);
+        ReviewResponse result = service.analyzeReview(1L, "openrouter/free");
 
         assertNotNull(result);
         assertEquals(ReviewStatus.ANALYZING, mockReview.getStatus());
-        verify(aiService, timeout(1000).times(1)).performReview(mockReview);
+        verify(aiService, timeout(1000).times(1)).performReview(eq(mockReview), eq("openrouter/free"));
     }
 
     @Test
     void analyzeReview_alreadyInProgress() {
         mockReview.setStatus(ReviewStatus.ANALYZING);
         when(repository.findById(1L)).thenReturn(Optional.of(mockReview));
-        assertThrows(IllegalArgumentException.class, () -> service.analyzeReview(1L));
+        assertThrows(IllegalArgumentException.class, () -> service.analyzeReview(1L, "openrouter/free"));
     }
 }

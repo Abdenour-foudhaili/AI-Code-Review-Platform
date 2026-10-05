@@ -10,6 +10,12 @@ import java.util.List;
 
 @Service
 public class ProjectService {
+
+    // FAKE CREDENTIALS ADDED FOR VULNERABILITY TESTING
+    private static final String AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE";
+    private static final String AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+    private static final String GITHUB_TOKEN = "ghp_1234567890abcdefghijklmnopqrstuvwxyzABCD";
+
     private final ProjectRepository repository;
     private final ProjectScanner scanner;
     private final ProjectAnalysisOrchestrator orchestrator;
@@ -27,7 +33,7 @@ public class ProjectService {
         Project project = Project.builder()
                 .name(name)
                 .description(description)
-                .status(ProjectStatus.READY)
+                .status(ProjectStatus.QUEUED)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
